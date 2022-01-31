@@ -1,19 +1,20 @@
 <script lang="tsx">
-import { defineComponent, inject, ref, Ref } from 'vue';
-import uptri from '../../../assets/uptri.svg';
-import righttri from '../../../assets/righttri.svg';
+import { defineComponent, inject, ref, Ref, reactive } from 'vue';
+import uptri from '../../../../../../assets/uptri.svg';
+import righttri from '../../../../../../assets/righttri.svg';
 
 export default defineComponent({
   name: 'List',
-  setup() {
-    const totalLevel = inject('totalLevel') as number,
-      currentLevel = inject('currentLevel') as number,
-      levelArr: string[] = [],
-      isFolded: Ref<boolean> = ref(true);
-
-    for (let i = 1; i <= totalLevel; i++) {
-      levelArr.push(`第${i}级`);
-    }
+  props: {
+    toSpecifiedLevel: {
+      type: Function,
+      default: () => {},
+    },
+  },
+  setup(props) {
+    const { toSpecifiedLevel } = props;
+    const isFolded: Ref<boolean> = ref(true);
+    const levelsInfo = inject('levelsInfo');
 
     return () => (
       <>
@@ -25,8 +26,16 @@ export default defineComponent({
                 : 'main-wrapper-inner-keywords-list-body'
             }
           >
-            {levelArr.map((item) => (
-              <li class="main-wrapper-inner-keywords-list-body-item">{item}</li>
+          {/* @ts-ignore */}
+            {levelsInfo.keyWordsArr.map((item, index) => (
+              <li
+                class="main-wrapper-inner-keywords-list-body-item"
+                onClick={() => {
+                  toSpecifiedLevel(item, index + 1);
+                }}
+              >
+                {item}
+              </li>
             ))}
           </ul>
           <div class="main-wrapper-inner-keywords-list-footer">
@@ -58,7 +67,7 @@ export default defineComponent({
 
   &-body {
     padding: 0 1rem 0 0;
-    max-height: 10.5rem;
+    max-height: 25.5rem;
     transition: max-height 0.3s ease-out;
     overflow: hidden;
 
@@ -68,12 +77,14 @@ export default defineComponent({
       color: #8c729c;
       text-align: center;
       border-bottom: 0.125rem #8c729c solid;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
     }
   }
 
   &-body.folded {
     max-height: 0;
-    // padding-bottom: 0;
   }
 
   &-footer {

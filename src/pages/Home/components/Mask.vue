@@ -5,8 +5,8 @@ import router from '../../../router';
 
 export default defineComponent({
   setup() {
-    function jumpToMain() {
-      router.push({ path: '/main' });
+    function jump(path: string) {
+      router.push({ path });
     }
 
     return () => (
@@ -21,11 +21,19 @@ export default defineComponent({
           </div>
           <button
             class="home-mask-btn"
-            onClick={() => {
-              jumpToMain();
+            onTouchstart={() => {
+              jump('/main');
             }}
           >
             点击进入
+          </button>
+          <button
+            class="home-mask-btn"
+            onTouchstart={() => {
+              jump('/instruction');
+            }}
+          >
+            查看指南
           </button>
         </div>
       </>
@@ -38,7 +46,7 @@ export default defineComponent({
   position: fixed;
   width: 100vw;
   height: 100vh;
-  z-index: 1;
+  z-index: 10;
   background-color: rgba($color: #220622, $alpha: 0.4);
   display: flex;
   justify-content: center;
@@ -87,6 +95,10 @@ export default defineComponent({
     font-size: 1.125rem;
     background-color: #b2a4cc;
     color: #fff;
+  }
+
+  &-btn:last-child {
+    bottom: 8rem;
   }
 }
 </style>

@@ -1,22 +1,122 @@
 <script lang="tsx">
-import { defineComponent, ref, Ref, PropType } from 'vue';
-import LongTap from '../utils/longtap';
+import { defineComponent, ref, Ref, inject, onMounted } from 'vue';
+import longPress from '../utils/longPress';
+
 import circle1 from '../assets/circle1.png';
 import circle2 from '../assets/circle2.png';
 
 export default defineComponent({
   name: 'Circle',
   props: {
-    keyWords: {
-      type: Array as PropType<string[]>,
-      default: [],
+    toNextLevel: {
+      type: Function,
+      default: () => {},
+    },
+    addToFav: {
+      type: Function,
+      default: () => {},
+    },
+    changeWords: {
+      type: Function,
+      default: () => {},
     },
   },
   setup(props) {
-    // console.log(props.keyWords)
     const showAddPage: Ref<boolean> = ref(false);
     const customWord: Ref<string> = ref('');
-    const { keyWords } = props;
+    const currentInfo = inject('currentInfo');
+    const { toNextLevel, addToFav, changeWords } = props;
+
+    onMounted(() => {
+      // 区分长按和点击
+      const customWordDom = document.querySelector('.c-circle-custom_word');
+      const circleDom2 = document.querySelector('.c-circle-img_wrapper2');
+      const circleDom3 = document.querySelector('.c-circle-img_wrapper3');
+      const circleDom4 = document.querySelector('.c-circle-img_wrapper4');
+      const circleDom5 = document.querySelector('.c-circle-img_wrapper5');
+
+      longPress(
+        customWordDom,
+        () => {
+          showAddPage.value = true;
+        },
+        () => {
+          toNextLevel(customWord.value);
+        }
+      );
+
+      longPress(
+        circleDom2,
+        () => {
+          // @ts-ignore
+          if (currentInfo.children.length && currentInfo.children[0] !== '') {
+            // @ts-ignore
+            addToFav(currentInfo.children[0]);
+          }
+        },
+        () => {
+          // @ts-ignore
+          if (currentInfo.children.length && currentInfo.children[0] !== '') {
+            // @ts-ignore
+            toNextLevel(currentInfo.children[0]);
+          }
+        }
+      );
+
+      longPress(
+        circleDom3,
+        () => {
+          // @ts-ignore
+          if (currentInfo.children.length && currentInfo.children[1] !== '') {
+            // @ts-ignore
+            addToFav(currentInfo.children[1]);
+          }
+        },
+        () => {
+          // @ts-ignore
+          if (currentInfo.children.length && currentInfo.children[1] !== '') {
+            // @ts-ignore
+            toNextLevel(currentInfo.children[1]);
+          }
+        }
+      );
+
+      longPress(
+        circleDom4,
+        () => {
+          // @ts-ignore
+          if (currentInfo.children.length && currentInfo.children[2] !== '') {
+            // @ts-ignore
+            addToFav(currentInfo.children[2]);
+          }
+        },
+        () => {
+          // @ts-ignore
+          if (currentInfo.children.length && currentInfo.children[2] !== '') {
+            // @ts-ignore
+            toNextLevel(currentInfo.children[2]);
+          }
+        }
+      );
+
+      longPress(
+        circleDom5,
+        () => {
+          // @ts-ignore
+          if (currentInfo.children.length && currentInfo.children[3] !== '') {
+            // @ts-ignore
+            addToFav(currentInfo.children[3]);
+          }
+        },
+        () => {
+          // @ts-ignore
+          if (currentInfo.children.length && currentInfo.children[3] !== '') {
+            // @ts-ignore
+            toNextLevel(currentInfo.children[3]);
+          }
+        }
+      );
+    });
 
     return () => (
       <>
@@ -26,7 +126,7 @@ export default defineComponent({
             {customWord.value === '' ? (
               <span
                 class="c-circle-add"
-                onClick={() => {
+                onTouchstart={() => {
                   showAddPage.value = true;
                 }}
               >
@@ -35,51 +135,55 @@ export default defineComponent({
             ) : (
               ''
             )}
-            {customWord.value !== '' ? (
-              <span
-                class="c-circle-custom_word"
-                onClick={() => {
-                  const customWordDom = new LongTap(
-                    document.querySelector('.c-circle-custom_word'),
-                    800
-                  );
-                  customWordDom.longTap(() => {
-                    showAddPage.value = true;
-                  });
-                }}
-              >
-                {customWord.value}
-              </span>
-            ) : (
-              ''
-            )}
+            <span
+              class="c-circle-custom_word"
+              onDblclick={() => {
+                if (customWord.value !== '') {
+                  addToFav(customWord.value);
+                }
+              }}
+            >
+              {customWord.value !== '' ? customWord.value : ''}
+            </span>
           </div>
           <div class="c-circle-img_wrapper2">
             <img src={circle1} class="c-circle-img_wrapper-circle" />
             <span class="c-circle-img_wrapper-word">
-              {keyWords.length ? keyWords[0] : ''}
+              {/*@ts-ignore*/}
+              {currentInfo?.children.length ? currentInfo.children[0] : ''}
             </span>
           </div>
           <div class="c-circle-img_wrapper3">
             <img src={circle2} class="c-circle-img_wrapper-circle" />
             <span class="c-circle-img_wrapper-word">
-              {keyWords.length ? keyWords[1] : ''}
+              {/*@ts-ignore*/}
+              {currentInfo?.children.length ? currentInfo.children[1] : ''}
             </span>
           </div>
           <div class="c-circle-img_wrapper4">
             <img src={circle1} class="c-circle-img_wrapper-circle" />
             <span class="c-circle-img_wrapper-word">
-              {keyWords.length ? keyWords[2] : ''}
+              {/*@ts-ignore*/}
+              {currentInfo?.children.length ? currentInfo.children[2] : ''}
             </span>
           </div>
           <div class="c-circle-img_wrapper5">
             <img src={circle1} class="c-circle-img_wrapper-circle" />
             <span class="c-circle-img_wrapper-word">
-              {keyWords.length ? keyWords[3] : ''}
+              {/*@ts-ignore*/}
+              {currentInfo?.children.length ? currentInfo.children[3] : ''}
             </span>
           </div>
           <div class="c-circle-img_wrapper6">
             <img src={circle2} class="c-circle-img_wrapper-circle" />
+            <span
+              class="c-circle-img_wrapper-change"
+              onTouchstart={() => {
+                changeWords();
+              }}
+            >
+              换一批
+            </span>
           </div>
           <div class="c-circle-solid1"></div>
           <div class="c-circle-solid2"></div>
@@ -99,7 +203,7 @@ export default defineComponent({
             <div class="c-circle-add_page-btn">
               <button
                 class="c-circle-add_page-btn-add"
-                onClick={() => {
+                onTouchstart={() => {
                   showAddPage.value = false;
                   const input = document.querySelector(
                     '.c-circle-add_page-input'
@@ -112,7 +216,7 @@ export default defineComponent({
               </button>
               <button
                 class="c-circle-add_page-btn-cancel"
-                onClick={() => {
+                onTouchstart={() => {
                   showAddPage.value = false;
                 }}
               >
@@ -128,7 +232,6 @@ export default defineComponent({
 </script>
 <style lang="scss">
 .c-circle {
-  position: relative;
   width: 100vw;
   height: 100vh;
   overflow: hidden;
@@ -144,8 +247,8 @@ export default defineComponent({
   &-img_wrapper1 {
     right: 0.625rem;
     top: 9rem;
-    width: 9rem;
-    height: 9rem;
+    width: 8rem;
+    height: 8rem;
   }
 
   &-img_wrapper2 {
@@ -163,21 +266,22 @@ export default defineComponent({
   }
 
   &-img_wrapper4 {
-    bottom: 10rem;
+    // bottom: 10rem;
+    top: 23rem;
     right: 1rem;
     width: 9rem;
     height: 9rem;
   }
 
   &-img_wrapper5 {
-    bottom: 0rem;
+    top: 31rem;
     right: 2rem;
     width: 11rem;
     height: 11rem;
   }
 
   &-img_wrapper6 {
-    bottom: -5rem;
+    top: 37.5rem;
     left: 1rem;
     width: 9rem;
     height: 9rem;
@@ -228,7 +332,8 @@ export default defineComponent({
     height: 4.5rem;
     z-index: -1;
     background-color: #f3f4fb;
-    bottom: 4rem;
+    // bottom: 4rem;
+    top: 32rem;
     left: 2.5rem;
     border-radius: 50%;
   }
@@ -238,7 +343,8 @@ export default defineComponent({
     height: 4rem;
     z-index: -1;
     background-color: #f3f4fb;
-    bottom: 0.5rem;
+    // bottom: 0.5rem;
+    top: 37rem;
     right: 0.5rem;
     border-radius: 50%;
   }
@@ -248,7 +354,8 @@ export default defineComponent({
     height: 2.7rem;
     z-index: -1;
     background-color: #f3f4fb;
-    bottom: 12rem;
+    // bottom: 12rem;
+    top: 29rem;
     left: -0.5rem;
     border-radius: 50%;
   }
@@ -318,8 +425,19 @@ export default defineComponent({
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 50%;
-  height: 50%;
+  width: 70%;
+  height: 70%;
+  text-align: center;
+}
+
+.c-circle-img_wrapper-change {
+  position: absolute;
+  color: #9e76a9;
+  font-weight: 600;
+  font-size: 1.1rem;
+  letter-spacing: 0.2rem;
+  text-align: center;
+  top: 2.2rem;
 }
 
 .c-circle-add {
@@ -332,6 +450,7 @@ export default defineComponent({
   align-items: center;
   top: 1rem;
   color: #b9a9d9;
+  z-index: 1;
 }
 
 .c-circle-custom_word {

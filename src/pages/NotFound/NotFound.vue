@@ -7,12 +7,12 @@ export default defineComponent({
       <>
         <div class="msg">404 Not Found</div>
       </>
-    )
-  }
-})
+    );
+  },
+});
 </script>
 <style lang="scss">
-.msg{
+.msg {
   font-size: 2rem;
 }
 </style>

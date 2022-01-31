@@ -1,12 +1,12 @@
 <script lang="tsx">
 import {
   defineComponent,
-  onBeforeMount,
   onMounted,
   nextTick,
   ref,
   Ref,
   provide,
+  reactive,
 } from 'vue';
 
 import BScroll from '@better-scroll/core';
@@ -14,9 +14,10 @@ import Slide from '@better-scroll/slide';
 import { page } from '../../models/page';
 import request from '../../network/request';
 
-import Circle from '../../components/Circle.vue';
-import Input from './components/Input.vue';
-import List from './components/List.vue';
+import TopBar from './components/TopBar/TopBar.vue';
+import KeyWords from './components/KeyWords/KeyWords.vue';
+import Favorite from './components/Favorite/Favarite.vue';
+import Map from './components/Map/Map.vue';
 
 BScroll.use(Slide);
 
@@ -26,24 +27,30 @@ export default defineComponent({
     let bs = null;
     let wrapper = null;
     const currentPage: Ref<page> = ref(page.keywords);
-    let currentLevel = 0;
-    let totalLevel = 1;
-    // let keyWords = ['成步堂', '御剑', '千寻', '神乃木', '真宵'];
-    let keyWords: Ref<string[]> = ref([]);
 
-    provide('currentLevel', currentLevel);
-    provide('totalLevel', totalLevel);
-
-    onBeforeMount(async () => {
-      const res = await request('黑客');
-      keyWords.value = res.data;
+    // 所有层级信息(以下几个对象，有多余属性)
+    const levelsInfo = reactive({
+      count: 0,
+      levels: [],
+      keyWordsArr: [],
     });
 
-    onMounted(async () => {
-      await nextTick();
-      initSlide();
+    // 收藏夹信息
+    const favInfo = reactive({
+      keyWord: '',
+      children: [],
     });
 
+    // 当前层级信息
+    const currentInfo = reactive({
+      keyword: '',
+      children: [],
+      level: 0,
+      // 指向收藏夹某处数组的指针
+      favPointer: favInfo.children,
+    });
+
+    // 整个页面的滑动
     function initSlide() {
       wrapper = document.querySelector('.main-wrapper') as HTMLElement;
 
@@ -67,51 +74,135 @@ export default defineComponent({
       });
     }
 
-    function updateWords() {
+    // 搜索根关键词
+    async function initRootWord(word: string) {
+      const res = await request(word);
+      levelsInfo.count = 1;
+      levelsInfo.levels.length = 0;
+      levelsInfo.levels.push({
+        keyWord: word,
+        children: res.data,
+      });
+      levelsInfo.keyWordsArr.push(word);
 
+      currentInfo.keyword = word;
+      currentInfo.children = levelsInfo.levels[0].children;
+      currentInfo.level = 1;
+
+      favInfo.keyWord = word;
+      favInfo.children.length = 0;
+      currentInfo.favPointer = favInfo.children;
+
+      console.log('initRootWord', word);
     }
+
+    // 点击圈圈内的词，进入下一层级
+    async function toNextLevel(word: string) {
+      if (word) {
+        const res = await request(word);
+        levelsInfo.count++;
+        levelsInfo.levels.push({
+          keyWord: word,
+          children: res.data,
+        });
+        levelsInfo.keyWordsArr.push(word);
+
+        const favPointer = findWordInFav(word, favInfo);
+        if (favPointer) {
+          console.log('update favPointer', favPointer);
+          currentInfo.favPointer = favPointer;
+        }
+
+        currentInfo.keyword = word;
+        currentInfo.children = levelsInfo.levels[levelsInfo.count - 1].children;
+        currentInfo.level = levelsInfo.count;
+
+        console.log('toNextLevel');
+      }
+    }
+
+    // 点击左下角，选择某一层级进入
+    function toSpecifiedLevel(word: string, level) {
+      console.log('toSpecifiedLevel', word, level);
+      currentInfo.keyword = levelsInfo.keyWordsArr[level - 1];
+      currentInfo.children = levelsInfo.levels[level - 1].children;
+      currentInfo.level = level;
+
+      const favPointer = findWordInFav(word, favInfo);
+      if (favPointer) {
+        currentInfo.favPointer = favPointer;
+      }
+
+      levelsInfo.count = level;
+      levelsInfo.levels.length = level;
+      levelsInfo.keyWordsArr.length = level;
+    }
+
+    // 换一批 
+    function changeWords() {
+      currentInfo.children.reverse()
+    }
+
+    // 在收藏夹内查找词，修改收藏夹指针
+    function findWordInFav(word: string, favInfoObj) {
+      let curWord = favInfoObj.keyWord;
+      if (curWord === word) {
+        // console.log(curWord, favInfoObj, favInfoObj.children);
+        return favInfoObj.children;
+      }
+      for (let i = 0; i < favInfoObj.children.length; i++) {
+        const data = findWordInFav(word, favInfoObj.children[i]);
+        if (data) {
+          return data;
+        }
+      }
+    }
+
+    // 加入收藏夹
+    function addToFav(word: string) {
+      console.log('addToFav', word);
+      currentInfo.favPointer.push({
+        keyWord: word,
+        children: [],
+        spread: false,
+      });
+    }
+
+    // 删除收藏的词语
+    function deleteInFav(word: string, favPointer) {
+      // 确定删除后favPointer的指向(直接指向根的孩子)
+      currentInfo.favPointer = favInfo.children;
+      // 删除
+      console.log('deleteInFav', word);
+      const index = favPointer.findIndex((item) => item.keyWord === word);
+      favPointer.splice(index, 1);
+    }
+
+    onMounted(async () => {
+      await nextTick();
+      initSlide();
+    });
+
+    provide('currentPage', currentPage);
+    provide('currentInfo', currentInfo);
+    provide('levelsInfo', levelsInfo);
+    provide('favInfo', favInfo);
 
     return () => (
       <>
         <div class="main">
-          <div class="main-topbar">
-            <div
-              class={
-                currentPage.value === page.keywords
-                  ? 'main-topbar-item selected'
-                  : 'main-topbar-item'
-              }
-            >
-              关键词
-            </div>
-            <div
-              class={
-                currentPage.value === page.favorite
-                  ? 'main-topbar-item selected'
-                  : 'main-topbar-item'
-              }
-            >
-              收藏夹
-            </div>
-            <div
-              class={
-                currentPage.value === page.map
-                  ? 'main-topbar-item selected'
-                  : 'main-topbar-item'
-              }
-            >
-              预览导图
-            </div>
-          </div>
+          <TopBar />
           <div class="main-wrapper">
             <div class="main-wrapper-inner">
-              <div class="main-wrapper-inner-keywords">
-                <Circle keyWords={keyWords.value} />
-                <Input />
-                <List />
-              </div>
-              <div class="main-wrapper-inner-favorite">收藏夹</div>
-              <div class="main-wrapper-inner-map">思维导图</div>
+              <KeyWords
+                toNextLevel={toNextLevel}
+                addToFav={addToFav}
+                initRootWord={initRootWord}
+                toSpecifiedLevel={toSpecifiedLevel}
+                changeWords={changeWords}
+              />
+              <Favorite deleteInFav={deleteInFav} />
+              <Map />
             </div>
           </div>
         </div>
@@ -125,58 +216,15 @@ export default defineComponent({
   width: 100vw;
   height: 100vh;
 
-  &-topbar {
-    width: 100vw;
-    height: 8vh;
-    line-height: 8vh;
-    background-color: #bfa;
-    display: flex;
-
-    &-item {
-      width: 33.3%;
-      text-align: center;
-      background-color: #f7f7f7;
-      color: #dcdcdc;
-      font-size: 1.2rem;
-      letter-spacing: 0.1875rem;
-    }
-
-    &-item.selected {
-      background-color: #fff;
-      color: #acacac;
-    }
-  }
-
   &-wrapper {
     width: 100vw;
     height: 92vh;
     overflow: hidden;
+    position: relative;
 
     &-inner {
       display: flex;
-
-      &-keywords {
-        width: 100vw;
-        height: 92vh;
-        flex-shrink: 0;
-
-        & > div:first-child {
-          position: relative;
-          top: -8vh;
-        }
-      }
-
-      &-favorite {
-        width: 100vw;
-        height: 92vh;
-        flex-shrink: 0;
-      }
-
-      &-map {
-        width: 100vw;
-        height: 92vh;
-        flex-shrink: 0;
-      }
+      overflow: hidden;
     }
   }
 }
